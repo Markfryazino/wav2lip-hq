@@ -5,13 +5,17 @@ import json, subprocess, random, string
 from tqdm import tqdm
 from glob import glob
 import torch, face_detection
-from models import Wav2Lip
+from wav2lip_models import Wav2Lip
 import platform
+from face_parsing import init_parser, swap_regions
 
 parser = argparse.ArgumentParser(description='Inference code to lip-sync videos in the wild using Wav2Lip models')
 
 parser.add_argument('--checkpoint_path', type=str, 
 					help='Name of saved checkpoint to load weights from', required=True)
+
+parser.add_argument('--segmentation_path', type=str, 
+					help='Name of saved checkpoint of segmentation network', required=True)
 
 parser.add_argument('--face', type=str, 
 					help='Filepath of video/image that contains faces to use', required=True)
@@ -19,6 +23,7 @@ parser.add_argument('--audio', type=str,
 					help='Filepath of video/audio file to use as raw audio source', required=True)
 parser.add_argument('--outfile', type=str, help='Video path to save result. See default for an e.g.', 
 								default='results/result_voice.mp4')
+
 
 parser.add_argument('--static', type=bool, 
 					help='If True, then use only first video frame for inference', default=False)
@@ -246,6 +251,9 @@ def main():
 	batch_size = args.wav2lip_batch_size
 	gen = datagen(full_frames.copy(), mel_chunks)
 
+	print("Loading segmentation network")
+	seg_net = init_parser(args.segmentation_path)
+
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
 		if i == 0:
@@ -267,6 +275,8 @@ def main():
 		for p, f, c in zip(pred, frames, coords):
 			y1, y2, x1, x2 = c
 			p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
+
+			p = swap_regions(f[y1:y2, x1:x2], p, seg_net)
 
 			f[y1:y2, x1:x2] = p
 			out.write(f)
