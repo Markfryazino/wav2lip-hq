@@ -5,7 +5,7 @@ import torch
 from .rrdbnet_arch import RRDBNet
 
 
-def init_sr_model(model_path)
+def init_sr_model(model_path):
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32)
     model.load_state_dict(torch.load(model_path)['params'], strict=True)
     model.eval()
