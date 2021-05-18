@@ -8,6 +8,7 @@ import torch, face_detection
 from wav2lip_models import Wav2Lip
 import platform
 from face_parsing import init_parser, swap_regions
+from basic_sr import init_sr_model, enhance
 
 parser = argparse.ArgumentParser(description='Inference code to lip-sync videos in the wild using Wav2Lip models')
 
@@ -16,6 +17,9 @@ parser.add_argument('--checkpoint_path', type=str,
 
 parser.add_argument('--segmentation_path', type=str, 
 					help='Name of saved checkpoint of segmentation network', required=True)
+
+parser.add_argument('--sr_path', type=str, 
+					help='Name of saved checkpoint of super-resolution network', required=True)
 
 parser.add_argument('--face', type=str, 
 					help='Filepath of video/image that contains faces to use', required=True)
@@ -251,8 +255,11 @@ def main():
 	batch_size = args.wav2lip_batch_size
 	gen = datagen(full_frames.copy(), mel_chunks)
 
-	print("Loading segmentation network")
+	print("Loading segmentation network...")
 	seg_net = init_parser(args.segmentation_path)
+
+	print("Loading super resolution model...")
+	sr_net = init_sr_model(args.sr_path)
 
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
@@ -274,8 +281,9 @@ def main():
 		
 		for p, f, c in zip(pred, frames, coords):
 			y1, y2, x1, x2 = c
-			p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 
+			p = enhance(sr_net, p)
+			p = cv2.resize(p.astype(np.uint8), (x2 - x1, y2 - y1))
 			p = swap_regions(f[y1:y2, x1:x2], p, seg_net)
 
 			f[y1:y2, x1:x2] = p
