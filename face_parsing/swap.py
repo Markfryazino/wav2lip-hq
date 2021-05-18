@@ -1,8 +1,9 @@
 import torch
 import torchvision.transforms as transforms
 import cv2
+import numpy as np
 
-from model import BiSeNet
+from .model import BiSeNet
 
 
 def init_parser(pth_path):
