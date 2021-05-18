@@ -1,0 +1,1 @@
+This is a folder for various temporary stuff.
