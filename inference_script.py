@@ -127,7 +127,7 @@ def face_detect(images):
 	results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
 
 	faces = [el[0] for el in results]
-	coords [el[1] for el in results]
+	coords = [el[1] for el in results]
 
 	return faces, coords
 
@@ -208,7 +208,7 @@ def datagen():
 		y1, y2, x1, x2 = args.box
 		face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in frames] """
 
-	for i, m in audio_reader:
+	for m in audio_reader:
 		try:
 			frame_to_save = next(frame_reader)
 		except StopIteration:
@@ -229,7 +229,7 @@ def datagen():
 			#img_batch, mel_batch = np.asarray(img_batch), np.asarray(mel_batch)
 
 			faces, coords_batch = face_detect(frame_batch)
-			img_batch = np.asarray([cv2.resize(face, (args.img_size, args.img_size) for face in faces])
+			img_batch = np.asarray([cv2.resize(face, (args.img_size, args.img_size)) for face in faces])
 
 			mel_batch = np.asarray(mel_batch)
 
@@ -244,7 +244,7 @@ def datagen():
 
 	if len(img_batch) > 0:
 		faces, coords_batch = face_detect(frame_batch)
-		img_batch = np.asarray([cv2.resize(face, (args.img_size, args.img_size) for face in faces])
+		img_batch = np.asarray([cv2.resize(face, (args.img_size, args.img_size)) for face in faces])
 
 		mel_batch = np.asarray(mel_batch)
 
@@ -301,7 +301,7 @@ def main():
 			model = load_model(args.checkpoint_path)
 			print ("Model loaded")
 
-			frame_h, frame_w = full_frames[0].shape[:-1]
+			frame_h, frame_w = frames[0].shape[:-1]
 			out = cv2.VideoWriter('temp/result.avi', 
 									cv2.VideoWriter_fourcc(*'DIVX'), args.fps, (frame_w, frame_h))
 
