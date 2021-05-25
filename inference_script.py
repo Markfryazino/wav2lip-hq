@@ -65,10 +65,12 @@ parser.add_argument('--no_sr', default=False, action='store_true',
 
 parser.add_argument('--save_frames', default=False, action='store_true',
 					help='Save each frame as an image. Use with caution')
-parser.add_argument('--gt_folder', type=str, 
+parser.add_argument('--gt_path', type=str, 
 					help='Where to store saved ground truth frames', required=False)
-parser.add_argument('--pred_folder', type=str, 
+parser.add_argument('--pred_path', type=str, 
 					help='Where to store frames produced by algorithm', required=False)
+parser.add_argument('--save_as_video', action="store_true", default=False
+					help='Whether to save frames as video', required=False)
 
 args = parser.parse_args()
 args.img_size = 96
@@ -94,7 +96,7 @@ def face_detect(images):
 	while 1:
 		predictions = []
 		try:
-			for i in tqdm(range(0, len(images), batch_size)):
+			for i in range(0, len(images), batch_size):
 				predictions.extend(detector.get_detections_for_batch(np.array(images[i:i + batch_size])))
 		except RuntimeError:
 			if batch_size == 1: 
@@ -149,7 +151,7 @@ def datagen(mels):
 			reader = read_frames()
 			frame_to_save = next(reader)
 
-		face, coords = face_detect([frame_to_save])
+		face, coords = face_detect([frame_to_save])[0]
 
 		face = cv2.resize(face, (args.img_size, args.img_size))
 			
@@ -278,6 +280,12 @@ def main():
 	batch_size = args.wav2lip_batch_size
 	gen = datagen(mel_chunks)
 
+
+
+	if args.save_as_video:
+		gt_out = cv2.VideoWriter("temp/gt.avi", cv2.VideoWriter_fourcc(*'DIVX'), fps, (384, 384))
+		pred_out = cv2.VideoWriter("temp/pred.avi", cv2.VideoWriter_fourcc(*'DIVX'), fps, (384, 384))
+
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
 		if i == 0:
@@ -306,9 +314,13 @@ def main():
 			y1, y2, x1, x2 = c
 
 			if args.save_frames:
-				cv2.imwrite(f"{args.gt_folder}/{abs_idx}.png", f)
-				cv2.imwrite(f"{args.pred_folder}/{abs_idx}.png", p)
-				abs_idx += 1
+				if args.save_as_video:
+					gt_out.write(p)
+					pred_path.write(cv2.resize(f[y1:y2, x1:x2], (384, 384)))
+				else:
+					cv2.imwrite(f"{args.gt_path}/{abs_idx}.png", f[y1:y2, x1:x2])
+					cv2.imwrite(f"{args.pred_path}/{abs_idx}.png", p)
+					abs_idx += 1
 
 			if not args.no_sr:
 				p = enhance(sr_net, p)
@@ -324,6 +336,17 @@ def main():
 
 	command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, 'temp/result.avi', args.outfile)
 	subprocess.call(command, shell=platform.system() != 'Windows')
+
+	if args.save_frames:
+		gt_out.release()
+		pred_out.release()
+
+		command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, 'temp/gt.avi', args.gt_path)
+		subprocess.call(command, shell=platform.system() != 'Windows')
+
+		command = 'ffmpeg -y -i {} -i {} -strict -2 -q:v 1 {}'.format(args.audio, 'temp/pred.avi', args.pred_path)
+		subprocess.call(command, shell=platform.system() != 'Windows')
+
 
 if __name__ == '__main__':
 	main()
