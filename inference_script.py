@@ -69,7 +69,7 @@ parser.add_argument('--gt_path', type=str,
 					help='Where to store saved ground truth frames', required=False)
 parser.add_argument('--pred_path', type=str, 
 					help='Where to store frames produced by algorithm', required=False)
-parser.add_argument('--save_as_video', action="store_true", default=False
+parser.add_argument('--save_as_video', action="store_true", default=False,
 					help='Whether to save frames as video', required=False)
 
 args = parser.parse_args()
@@ -284,7 +284,7 @@ def main():
 
 	if args.save_as_video:
 		gt_out = cv2.VideoWriter("temp/gt.avi", cv2.VideoWriter_fourcc(*'DIVX'), fps, (384, 384))
-		pred_out = cv2.VideoWriter("temp/pred.avi", cv2.VideoWriter_fourcc(*'DIVX'), fps, (384, 384))
+		pred_out = cv2.VideoWriter("temp/pred.avi", cv2.VideoWriter_fourcc(*'DIVX'), fps, (96, 96))
 
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
@@ -315,8 +315,8 @@ def main():
 
 			if args.save_frames:
 				if args.save_as_video:
-					gt_out.write(p)
-					pred_path.write(cv2.resize(f[y1:y2, x1:x2], (384, 384)))
+					pred_out.write(p.astype(np.uint8))
+					gt_out.write(cv2.resize(f[y1:y2, x1:x2], (384, 384)))
 				else:
 					cv2.imwrite(f"{args.gt_path}/{abs_idx}.png", f[y1:y2, x1:x2])
 					cv2.imwrite(f"{args.pred_path}/{abs_idx}.png", p)
