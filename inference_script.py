@@ -125,9 +125,10 @@ def face_detect(images):
 	del detector
 	return results 
 
-def datagen(frames, mels):
+def datagen(mels):
 	img_batch, mel_batch, frame_batch, coords_batch = [], [], [], []
 
+	"""
 	if args.box[0] == -1:
 		if not args.static:
 			face_det_results = face_detect(frames) # BGR2RGB for CNN face detection
@@ -137,11 +138,18 @@ def datagen(frames, mels):
 		print('Using the specified bounding box instead of face detection...')
 		y1, y2, x1, x2 = args.box
 		face_det_results = [[f[y1: y2, x1:x2], (y1, y2, x1, x2)] for f in frames]
+	"""
+
+	reader = read_frames()
 
 	for i, m in enumerate(mels):
-		idx = 0 if args.static else i%len(frames)
-		frame_to_save = frames[idx].copy()
-		face, coords = face_det_results[idx].copy()
+		try:
+			frame_to_save = next(reader)
+		except StopIteration:
+			reader = read_frames()
+			frame_to_save = next(reader)
+
+		face, coords = face_detect([frame_to_save])
 
 		face = cv2.resize(face, (args.img_size, args.img_size))
 			
@@ -198,41 +206,47 @@ def load_model(path):
 	model = model.to(device)
 	return model.eval()
 
+def read_frames():
+	if args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
+		face = cv2.imread(args.face)
+		while 1:
+			yield face
+
+	video_stream = cv2.VideoCapture(args.face)
+	fps = video_stream.get(cv2.CAP_PROP_FPS)
+
+	print('Reading video frames from start...')
+
+	while 1:
+		still_reading, frame = video_stream.read()
+		if not still_reading:
+			video_stream.release()
+			break
+		if args.resize_factor > 1:
+			frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
+
+		if args.rotate:
+			frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
+
+		y1, y2, x1, x2 = args.crop
+		if x2 == -1: x2 = frame.shape[1]
+		if y2 == -1: y2 = frame.shape[0]
+
+		frame = frame[y1:y2, x1:x2]
+
+		yield frame
+
 def main():
 	if not os.path.isfile(args.face):
 		raise ValueError('--face argument must be a valid path to video/image file')
 
 	elif args.face.split('.')[1] in ['jpg', 'png', 'jpeg']:
-		full_frames = [cv2.imread(args.face)]
 		fps = args.fps
-
 	else:
 		video_stream = cv2.VideoCapture(args.face)
 		fps = video_stream.get(cv2.CAP_PROP_FPS)
+		video_stream.release()
 
-		print('Reading video frames...')
-
-		full_frames = []
-		while 1:
-			still_reading, frame = video_stream.read()
-			if not still_reading:
-				video_stream.release()
-				break
-			if args.resize_factor > 1:
-				frame = cv2.resize(frame, (frame.shape[1]//args.resize_factor, frame.shape[0]//args.resize_factor))
-
-			if args.rotate:
-				frame = cv2.rotate(frame, cv2.cv2.ROTATE_90_CLOCKWISE)
-
-			y1, y2, x1, x2 = args.crop
-			if x2 == -1: x2 = frame.shape[1]
-			if y2 == -1: y2 = frame.shape[0]
-
-			frame = frame[y1:y2, x1:x2]
-
-			full_frames.append(frame)
-
-	print ("Number of frames available for inference: "+str(len(full_frames)))
 
 	if not args.audio.endswith('.wav'):
 		print('Extracting raw audio...')
@@ -261,10 +275,8 @@ def main():
 
 	print("Length of mel chunks: {}".format(len(mel_chunks)))
 
-	full_frames = full_frames[:len(mel_chunks)]
-
 	batch_size = args.wav2lip_batch_size
-	gen = datagen(full_frames.copy(), mel_chunks)
+	gen = datagen(mel_chunks)
 
 	for i, (img_batch, mel_batch, frames, coords) in enumerate(tqdm(gen, 
 											total=int(np.ceil(float(len(mel_chunks))/batch_size)))):
@@ -278,7 +290,7 @@ def main():
 			model = load_model(args.checkpoint_path)
 			print ("Model loaded")
 
-			frame_h, frame_w = full_frames[0].shape[:-1]
+			frame_h, frame_w = next(read_frames()).shape[:-1]
 			out = cv2.VideoWriter('temp/result.avi', 
 									cv2.VideoWriter_fourcc(*'DIVX'), fps, (frame_w, frame_h))
 
