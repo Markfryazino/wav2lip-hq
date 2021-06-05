@@ -1,0 +1,1 @@
+Most of the code in this folder was taken from the awesome [face parsing](https://github.com/zllrunning/face-parsing.PyTorch.git) repository.
