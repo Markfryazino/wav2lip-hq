@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import torch
 
-from archs.rrdbnet_arch import RRDBNet
+from basicr.archs.rrdbnet_arch import RRDBNet
 
 
 def init_sr_model(model_path):

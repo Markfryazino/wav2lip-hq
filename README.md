@@ -18,6 +18,8 @@ Our algorithm consists of the following steps:
 1. Upsample the output of Wav2Lip with ESRGAN.
 1. Use BiSeNet to change only relevant pixels in video.
 
+You can learn more about the method in [this article](https://drive.google.com/file/d/1ptTFVNc1v9kzr-V3OK8DJEywziVMKh68/view?usp=sharing) (in russian).
+
 ## Results
 Our approach is definetly not at all flawless, and some of the frames produced with it contain artifacts or weird mistakes. However, it can be used to perform lip-sync to high quality videos with plausible output.
 

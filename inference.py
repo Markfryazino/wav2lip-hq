@@ -71,6 +71,8 @@ parser.add_argument('--pred_path', type=str,
 					help='Where to store frames produced by algorithm', required=False)
 parser.add_argument('--save_as_video', action="store_true", default=False,
 					help='Whether to save frames as video', required=False)
+parser.add_argument('--image_prefix', type=str, default=""
+					help='Prefix to save frames with', required=False)
 
 args = parser.parse_args()
 args.img_size = 96
@@ -319,8 +321,8 @@ def main():
 					pred_out.write(p.astype(np.uint8))
 					gt_out.write(cv2.resize(f[y1:y2, x1:x2], (384, 384)))
 				else:
-					cv2.imwrite(f"{args.gt_path}/{abs_idx}.png", f[y1:y2, x1:x2])
-					cv2.imwrite(f"{args.pred_path}/{abs_idx}.png", p)
+					cv2.imwrite(f"{args.gt_path}/{args.image_prefix}{abs_idx}.png", f[y1:y2, x1:x2])
+					cv2.imwrite(f"{args.pred_path}/{args.image_prefix}{abs_idx}.png", p)
 					abs_idx += 1
 
 			if not args.no_sr:
