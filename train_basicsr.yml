@@ -44,7 +44,7 @@ network_d:
 path:
   pretrain_network_g: ~
   strict_load_g: true
-  resume_state: experiments/pretrained.state
+  resume_state: checkpoints/pretrained.state
 
 # training settings
 train:
@@ -64,7 +64,7 @@ train:
     milestones: [50000, 100000, 200000, 300000]
     gamma: 0.5
 
-  total_iter: 400000
+  total_iter: 150000
   warmup_iter: -1  # no warm up
 
   # losses

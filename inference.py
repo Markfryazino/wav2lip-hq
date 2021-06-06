@@ -71,7 +71,7 @@ parser.add_argument('--pred_path', type=str,
 					help='Where to store frames produced by algorithm', required=False)
 parser.add_argument('--save_as_video', action="store_true", default=False,
 					help='Whether to save frames as video', required=False)
-parser.add_argument('--image_prefix', type=str, default=""
+parser.add_argument('--image_prefix', type=str, default="",
 					help='Prefix to save frames with', required=False)
 
 args = parser.parse_args()

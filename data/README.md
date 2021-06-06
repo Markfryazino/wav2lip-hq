@@ -1,1 +1,0 @@
-This folder is used for storing the data that is required for training ESRGAN.
