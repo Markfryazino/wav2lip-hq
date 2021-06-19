@@ -3,7 +3,7 @@
 This is unofficial extension of [Wav2Lip: Accurately Lip-syncing Videos In The Wild](https://github.com/Rudrabha/Wav2Lip) repository. We use image super resolution and face segmentation for improving visual quality of lip-synced videos.
 
 ## Acknowledgements
-Our work is to a great extent based in the code from the following repositories:
+Our work is to a great extent based on the code from the following repositories:
 
 1. Clearly, [Wav2Lip](https://github.com/Rudrabha/Wav2Lip) repository, that is a core model of our algorithm that performs lip-sync.
 1. Moreover, [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch.git) repository provides us with a model for face segmentation.
